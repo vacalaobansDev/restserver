@@ -12,9 +12,6 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'dev';
 
 // ============================
 //  Base de datos
-//usuarioAtlasMongoDb: vacalaobans
-//password: 5nvsqZ3h6T1XqXwg
-// mongodb+srv://vacalaobans:5nvsqZ3h6T1XqXwg@beautiful-uy9ik.mongodb.net/test
 // ============================
 let urlDB;
 
