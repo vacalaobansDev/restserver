@@ -1,76 +1,15 @@
-var express = require('express');
+const express = require('express');
 
-var bcrypt = require('bcrypt');
-var _ = require('underscore');
+const bcrypt = require('bcrypt');
+const _ = require('underscore');
 
-var Usuario = require('../models/usuario');
+const Usuario = require('../models/usuario');
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
 
-var app = express();
+const app = express();
 
-
-var connAttrs = {
-    "user": "quipux",
-    "password": "P3rSt*001_Qx",
-    "connectString": `
-    (DESCRIPTION =
-      (ADDRESS_LIST =
-        (ADDRESS = (PROTOCOL = TCP)(HOST = 192.168.0.225)(PORT = 1521))
-      )
-      (CONNECT_DATA =
-        (SERVICE_NAME = PRODTRAN)
-    )
-   )`,
-};
-
-
-/////Consulter TIPO_ESTADO_COMPARENDO
-app.get('/estados', function(req, res) {
-    "use strict";
-
-    oracledb.getConnection(connAttrs, function(err, connection) {
-        if (err) {
-            // Error connecting to DB
-            res.set('Content-Type', 'application/json');
-            res.status(500).send(JSON.stringify({
-                status: 500,
-                message: "Error connecting to DB",
-                detailed_message: err.message
-            }));
-            return;
-        }
-        connection.execute("SELECT * FROM quipux.TIPO_ESTADO_COMPARENDO ", {}, {
-            outFormat: oracledb.OBJECT // Return the result as Object
-        }, function(err, result) {
-            if (err) {
-                res.set('Content-Type', 'application/json');
-                res.status(500).send(JSON.stringify({
-                    status: 500,
-                    message: "Error getting the dba_tablespaces",
-                    detailed_message: err.message
-                }));
-            } else {
-                res.header('Access-Control-Allow-Origin', '*');
-                res.header('Access-Control-Allow-Headers', 'Content-Type');
-                res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-                res.contentType('application/json').status(200);
-                res.send(JSON.stringify(result.rows));
-
-            }
-            // Release the connection
-            connection.release(
-                function(err) {
-                    if (err) {
-                        console.error(err.message);
-                    } else {
-                        console.log("GET /sendTablespace : Connection released");
-                    }
-                });
-        });
-    });
-});
-
-app.get('/usuario', function(req, res) {
-
+// Selecciona lista de usuarios activos en BD creados de forma normal
+app.get('/usuario', verificaToken, (req, res) => {
 
 
     let desde = req.query.desde || 0;
@@ -106,8 +45,8 @@ app.get('/usuario', function(req, res) {
 
 
 });
-
-app.post('/usuario', function(req, res) {
+// Crea un usuario de forma normal.
+app.post('/usuario', [verificaToken, verificaAdmin_Role], function(req, res) {
 
     let body = req.body;
 
@@ -138,8 +77,8 @@ app.post('/usuario', function(req, res) {
 
 
 });
-
-app.put('/usuario/:id', function(req, res) {
+// Actualiza un usuario especifico en BD
+app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) {
 
     let id = req.params.id;
     let body = _.pick(req.body, ['nombre', 'email', 'img', 'role', 'estado']);
@@ -164,7 +103,8 @@ app.put('/usuario/:id', function(req, res) {
 
 });
 
-app.delete('/usuario/:id', function(req, res) {
+// Borra o inactiva un usuario de la BD cambiando su estado a false
+app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) {
 
 
     let id = req.params.id;
@@ -203,6 +143,7 @@ app.delete('/usuario/:id', function(req, res) {
 
 
 });
+
 
 
 module.exports = app;
